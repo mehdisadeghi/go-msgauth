@@ -310,14 +310,14 @@ func newParser(v string) *parser {
 // version id when present. Ignore header comments in parenthesis.
 func (p *parser) getIndentifier() (identifier string, err error) {
 	for {
-		c, err := p.r.ReadByte()
+		c, _, err := p.r.ReadRune()
 		if err == io.EOF {
 			return identifier, nil
 		} else if err != nil {
 			return identifier, err
 		}
 		if c == '(' {
-			p.r.UnreadByte()
+			p.r.UnreadRune()
 			p.readComment()
 			continue
 		}
@@ -399,9 +399,9 @@ func (p *parser) keyValue() (k, v string, err error) {
 // Section 2.2. Ignore the method-version of the methodspec. Stop at EOF or the
 // equal sign.
 func (p *parser) readKey() (k string, err error) {
-	var c byte
+	var c rune
 	for err != io.EOF {
-		c, err = p.r.ReadByte()
+		c, _, err = p.r.ReadRune()
 		if err != nil {
 			break
 		}
@@ -412,14 +412,14 @@ func (p *parser) readKey() (k string, err error) {
 		case '=':
 			break
 		case '(':
-			p.r.UnreadByte()
+			p.r.UnreadRune()
 			_, err = p.readComment()
 			continue
 		case '/':
 			p.r.ReadBytes('=')
 			p.r.UnreadByte()
 		default:
-			if !unicode.IsSpace(rune(c)) {
+			if !unicode.IsSpace(c) {
 				k += string(c)
 			}
 		}
@@ -435,9 +435,9 @@ func (p *parser) readKey() (k string, err error) {
 // is defined as either a token or quoted string according to RFC 2045 Section
 // 5.1. Stop at EOF, white space or semi-colons.
 func (p *parser) readValue() (v string, err error) {
-	var c byte
+	var c rune
 	for err != io.EOF {
-		c, err = p.r.ReadByte()
+		c, _, err = p.r.ReadRune()
 		if err != nil {
 			break
 		}
@@ -446,17 +446,17 @@ func (p *parser) readValue() (v string, err error) {
 			err = io.EOF
 			break
 		case '(':
-			p.r.UnreadByte()
+			p.r.UnreadRune()
 			_, err = p.readComment()
 			continue
 		case '"':
 			v, err = p.readQuotedString()
 		default:
-			if !unicode.IsSpace(rune(c)) {
+			if !unicode.IsSpace(c) {
 				v += string(c)
 			}
 		}
-		if unicode.IsSpace(rune(c)) {
+		if unicode.IsSpace(c) {
 			if v != "" {
 				break
 			}
@@ -491,15 +491,15 @@ func (p *parser) readQuotedString() (s string, err error) {
 
 func (p *parser) readComment() (comment string, err error) {
 	count := 0
-	var c byte
+	var c rune
 	for {
-		c, err = p.r.ReadByte()
+		c, _, err = p.r.ReadRune()
 		if err != nil {
 			break
 		}
 		switch c {
 		case '\\':
-			c, _ = p.r.ReadByte()
+			c, _, _ = p.r.ReadRune()
 			comment += "\\" + string(c)
 		case '(':
 			count++

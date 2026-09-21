@@ -102,6 +102,14 @@ var parseTests = []msgauthTest{
 			&SPFResult{Value: ResultPass, From: "user@example.org"},
 		},
 	},
+	{
+		value: "example.com;" +
+			" spf=pass (voilà) smtp.mailfrom=voilà@example.org",
+		identifier: "example.com",
+		results: []Result{
+			&SPFResult{Value: ResultPass, From: "voilà@example.org"},
+		},
+	},
 }
 
 var mustFailParseTests = []msgauthTest{
