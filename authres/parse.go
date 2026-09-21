@@ -450,8 +450,7 @@ func (p *parser) readValue() (v string, err error) {
 			_, err = p.readComment()
 			continue
 		case '"':
-			v, err = p.r.ReadString(c)
-			v = strings.TrimSuffix(v, string(c))
+			v, err = p.readQuotedString()
 		default:
 			if !unicode.IsSpace(rune(c)) {
 				v += string(c)
@@ -465,6 +464,29 @@ func (p *parser) readValue() (v string, err error) {
 	}
 	v = strings.TrimSpace(v)
 	return
+}
+
+// readQuotedString reads a quoted-string as defined in RFC 5322 Section 3.2.4
+// up to its closing quote, the opening one being consumed already. Return its
+// content without the backslashes of its quoted-pairs.
+func (p *parser) readQuotedString() (s string, err error) {
+	var c rune
+	for {
+		c, _, err = p.r.ReadRune()
+		if err != nil {
+			return
+		}
+		switch c {
+		case '"':
+			return
+		case '\\':
+			c, _, err = p.r.ReadRune()
+			if err != nil {
+				return
+			}
+		}
+		s += string(c)
+	}
 }
 
 func (p *parser) readComment() (comment string, err error) {

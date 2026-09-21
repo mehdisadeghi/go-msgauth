@@ -37,6 +37,14 @@ var msgauthTests = []msgauthTest{
 	},
 	{
 		value: "example.com;" +
+			" spf=fail reason=\"bad; very \\\"bad\\\"\" smtp.mailfrom=example.net",
+		identifier: "example.com",
+		results: []Result{
+			&SPFResult{Value: ResultFail, Reason: "bad; very \"bad\"", From: "example.net"},
+		},
+	},
+	{
+		value: "example.com;" +
 			" auth=pass smtp.auth=sender@example.com;" +
 			" spf=pass smtp.mailfrom=example.com",
 		identifier: "example.com",
