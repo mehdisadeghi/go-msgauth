@@ -92,6 +92,16 @@ var parseTests = []msgauthTest{
 			&DKIMResult{Value: ResultFail, Reason: "", Domain: "", Identifier: ""},
 		},
 	},
+	{
+		value: "mx.example.com;\r\n" +
+			"       dkim=pass header.i=@example.org header.s=selector header.d=\"example.org\";\r\n" +
+			"       spf=pass (example.com: domain of user@example.org designates 192.0.2.1 as permitted sender) smtp.mailfrom=\"user@example.org\"",
+		identifier: "mx.example.com",
+		results: []Result{
+			&DKIMResult{Value: ResultPass, Domain: "example.org", Identifier: "@example.org"},
+			&SPFResult{Value: ResultPass, From: "user@example.org"},
+		},
+	},
 }
 
 var mustFailParseTests = []msgauthTest{
