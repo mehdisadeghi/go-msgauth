@@ -91,6 +91,8 @@ var tspecials = map[rune]struct{}{
 	'/': {}, '[': {}, ']': {}, '?': {}, '=': {},
 }
 
+var quotedPairReplacer = strings.NewReplacer(`\`, `\\`, `"`, `\"`)
+
 func formatValue(s string) string {
 	// value := token / quoted-string
 	// token := 1*<any (US-ASCII) CHAR except SPACE, CTLs,
@@ -109,7 +111,7 @@ func formatValue(s string) string {
 	}
 
 	if shouldQuote {
-		return `"` + strings.Replace(s, `"`, `\"`, -1) + `"`
+		return `"` + quotedPairReplacer.Replace(s) + `"`
 	}
 	return s
 }
