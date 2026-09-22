@@ -110,6 +110,45 @@ var parseTests = []msgauthTest{
 			&SPFResult{Value: ResultPass, From: "voilà@example.org"},
 		},
 	},
+	{
+		value:      "example.com; dkim=none",
+		identifier: "example.com",
+		results: []Result{
+			&DKIMResult{Value: ResultNone},
+		},
+	},
+	{
+		value: "example.com;" +
+			" dkim=none;" +
+			" spf=pass smtp.mailfrom=example.net",
+		identifier: "example.com",
+		results: []Result{
+			&DKIMResult{Value: ResultNone},
+			&SPFResult{Value: ResultPass, From: "example.net"},
+		},
+	},
+	{
+		value: "example.com;" +
+			" spf=pass smtp.mailfrom=example.net;" +
+			" dkim=none",
+		identifier: "example.com",
+		results: []Result{
+			&SPFResult{Value: ResultPass, From: "example.net"},
+			&DKIMResult{Value: ResultNone},
+		},
+	},
+	{
+		value: "mx.example.com;\r\n" +
+			"    dkim=none;\r\n" +
+			"    dmarc=fail reason=\"No valid SPF, No valid DKIM\" header.from=example.org (policy=quarantine);\r\n" +
+			"    spf=none (mx.example.com: domain of user@mail.example.org has no SPF policy) smtp.mailfrom=user@mail.example.org",
+		identifier: "mx.example.com",
+		results: []Result{
+			&DKIMResult{Value: ResultNone},
+			&DMARCResult{Value: ResultFail, Reason: "No valid SPF, No valid DKIM", From: "example.org"},
+			&SPFResult{Value: ResultNone, From: "user@mail.example.org"},
+		},
+	},
 }
 
 var mustFailParseTests = []msgauthTest{

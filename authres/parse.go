@@ -339,26 +339,32 @@ func (p *parser) getIndentifier() (identifier string, err error) {
 	return strings.TrimSpace(fields[0]), nil
 }
 
+// errNextResult is the semicolon between two methodspecs: it ends one
+// result, where io.EOF ends the header.
+var errNextResult = errors.New("msgauth: end of result")
+
 // getResults parses the authentication part of the authres header and returns
 // a Result struct. Ignore header comments in parenthesis.
 func (p *parser) getResult() (result Result, err error) {
 	method, resultvalue, err := p.keyValue()
-	if method == "none" {
+	// A method with no properties ends at the semicolon; keep it, and
+	// the header's "none" (RFC 8601 2.2) still says nothing.
+	if method == "none" || method == "" {
 		return nil, nil
 	}
-	if err != nil {
+	if err != nil && err != io.EOF && err != errNextResult {
 		return nil, err
 	}
 	value := ResultValue(strings.ToLower(resultvalue))
 
 	params := make(map[string]string)
 	var k, v string
-	for {
+	for err == nil {
 		k, v, err = p.keyValue()
 		if k != "" {
 			params[k] = v
 		}
-		if err == io.EOF {
+		if err == io.EOF || err == errNextResult {
 			break
 		} else if err != nil {
 			return nil, err
@@ -400,14 +406,14 @@ func (p *parser) keyValue() (k, v string, err error) {
 // equal sign.
 func (p *parser) readKey() (k string, err error) {
 	var c rune
-	for err != io.EOF {
+	for err == nil {
 		c, _, err = p.r.ReadRune()
 		if err != nil {
 			break
 		}
 		switch c {
 		case ';':
-			err = io.EOF
+			err = errNextResult
 			break
 		case '=':
 			break
@@ -436,14 +442,14 @@ func (p *parser) readKey() (k string, err error) {
 // 5.1. Stop at EOF, white space or semi-colons.
 func (p *parser) readValue() (v string, err error) {
 	var c rune
-	for err != io.EOF {
+	for err == nil {
 		c, _, err = p.r.ReadRune()
 		if err != nil {
 			break
 		}
 		switch c {
 		case ';':
-			err = io.EOF
+			err = errNextResult
 			break
 		case '(':
 			p.r.UnreadRune()
